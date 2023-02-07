@@ -6,8 +6,8 @@ This repository is associated with the article [Fasano, Anceschi, Rebaudo and Fr
 
 This repository provides codes to replicate the simulation study reported in Section 4 of [Fasano, Anceschi, Rebaudo and Franzolini (2023)](link).
 
-More precisely, we provide the `R` code to implement **Algorithms 1 and 2 presented in the paper** to obtain **efficients EP approximations of the posterior distribution** of the parameters in a probit model with spherical Gaussian prior distribution.
-We recall that Algorithm 1 and 2 have per-iteration cost O(p<sup>2</sup>n) and O(pn<sup>2</sup>), respectively, so the former is used when p<n, the latter otherwise.
+More precisely, we provide the `R` code to implement **Algorithms 1 and 2 presented in the paper** to obtain **efficient EP approximations of the posterior distribution** of the parameters in a probit model with spherical Gaussian prior distribution.
+We recall that Algorithms 1 and 2 have per-iteration costs O(p<sup>2</sup>n) and O(pn<sup>2</sup>), respectively, so the former is used when p<n, the latter otherwise.
 
 In addition, we also provide code to perform posterior inference with other three different methods, used for comparison purposes:
 
