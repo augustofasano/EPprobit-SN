@@ -16,7 +16,7 @@ library("EPGLM")
 
 We show how to replicate a specific scenario of the simulation study.
 Since the focus of the paper is on large p settings, we consider the case n=100 and p=800.
-In the fllowing we also show how to replicate the whole simulation study with all the scenarios.
+In the following we also show how to replicate the whole simulation study with all the scenarios.
 
 ### Set useful quantities
 We start our analysis setting the hyperparameters of the model and defining the number of samples used for the i.i.d. sampler.
