@@ -56,7 +56,7 @@ meanMC = apply(betaSUN,1,mean)
 sdMC = apply(betaSUN,1,sd)
 ````
 
-Secondly, we obtain the approximate posterior moments according the the **efficient expectation propagation (EP) implementation** presented in Algorithms 1 and 2 in the paper. They are computed via the function `getParamsEP`.
+Secondly, we obtain the approximate posterior moments according to the **efficient expectation propagation (EP) implementation** presented in Algorithms 1 and 2 in the paper. They are computed via the function `getParamsEP`.
 
 ````r
 startTime = Sys.time()
@@ -106,7 +106,7 @@ max(abs(sdEP-sdEPglm))
 # [1] 9.769963e-15
 ```
 
-Nevertheless, we see that the efficient implementation allows the computation of the approximate EP posterior moments at massively lower computational time.
+Nevertheless, we see that the efficient implementation allows the computation of the approximate EP posterior moments at a massively lower computational time.
 
 
 ```r
@@ -248,7 +248,7 @@ round(timePFM,2)
 ```
 
 ### Get absolute differences between i.i.d. posterior moments and the ones obtained via EP and PFM-VB (Figure 1)
-First we need to create an appropriate data frame.
+First, we need to create an appropriate data frame.
 
 ```r
 Plot_dataset<-data.frame(c(rep("Mean",5),rep("Standard deviation",5),rep("Mean",5),rep("Standard deviation",5)))
