@@ -1,4 +1,4 @@
-getParamsPFM = function(X,y,nu2,moments = TRUE,tolerance = 1e-2, maxIter = 1e4) {
+getParamsPFM = function(X , y ,nu2, moments = TRUE, predictive = FALSE, tolerance = 1e-2, maxIter = 1e4) {
   ######################################################
   # PRECOMPUTATION
   ######################################################
@@ -109,6 +109,21 @@ getParamsPFM = function(X,y,nu2,moments = TRUE,tolerance = 1e-2, maxIter = 1e4) 
     results = c(results,postMoments=moments_PFM)
   }
   
+  if(predictive==T){
+    # return also VXt and InvOmZ which are needed for the computation of predictive probabilities
+    if(moments==F){
+      # we weed to compute the quantities
+      if(p<=n) {
+        VXt = V%*%t(X)
+      } else{
+        VXt = t(nu2*X)%*%invOmZ
+      }
+    }
+    # now we have quantities we need
+    predQuant = list(VXt=VXt,invIXXt=invOmZ)
+    results = c(results,predQuant=predQuant)
+  }
+  
   return(results)
 }
 
@@ -155,58 +170,62 @@ rSUNpost = function(X,y,nu2,nSample) {
 generateSyntheticDataNoCorr = function(nTrain, nTest, p, intercept = FALSE, beta = NULL, seed=1) {
   # generate n observations of p-variate regressors: if intercept == T the first column is all 1
   set.seed(seed)
-  n = nTrain + nTest
   if(is.null(beta)){
     # randomly generate beta from uniform[-5,5]
     beta = matrix(runif(n=p, min = -5, max = 5), ncol = 1)
   }
   
+  # generate train set
   if(intercept == T) {
-    X = matrix(rnorm((p-1)*n,mean = 0, sd = 1), nrow = n, ncol = p-1)
-    meanTrain = apply(X[1:nTrain,],2,mean)
-    sdTrain = apply(X[1:nTrain,],2,sd)
-    X = cbind(rep(1,n),0.5*t(apply(X,1, function(x) (x-meanTrain)/sdTrain)))
+    # generate train set and data and get rescaling quantities
+    X_Train = matrix(rnorm((p-1)*nTrain,mean = 0, sd = 1), nrow = nTrain, ncol = p-1)
+    meanTrain = apply(X_Train,2,mean)
+    sdTrain = apply(X_Train,2,sd)
+    
+    # add intercept and standardise data
+    X_Train = cbind(rep(1,nTrain),0.5*t(apply(X_Train,1, function(x) (x-meanTrain)/sdTrain)))
   } else{
-    X = matrix(rnorm(p*n,mean = 0, sd = 1), nrow = n, ncol = p)
-    meanTrain = apply(X[1:nTrain,],2,mean)
-    sdTrain = apply(X[1:nTrain,],2,sd)
-    X = 0.5*t(apply(X,1, function(x) (x-meanTrain)/sdTrain)) # so we have zero mean and std=0.5
+    # generate train set and get rescaling quantities
+    X_Train = matrix(rnorm(p*nTrain,mean = 0, sd = 1), nrow = nTrain, ncol = p)
+    meanTrain = apply(X_Train,2,mean)
+    sdTrain = apply(X_Train,2,sd)
+    
+    # standardise data
+    X_Train = 0.5*t(apply(X_Train,1, function(x) (x-meanTrain)/sdTrain)) # so we have zero mean and std=0.5
   }
   
-  prob = pnorm(X%*%beta)
-  u = runif(n,0,1)
-  y = as.integer(u <= prob)
+  # generate train data
+  prob = pnorm(X_Train%*%beta)
+  u = runif(nTrain,0,1)
+  yTrain = as.integer(u <= prob)
   
-  return(list(X=X,y=y,beta=beta))
-}
-
-generateSyntheticDataNoCorrNoStd = function(nTrain, nTest, p, intercept = FALSE, beta = NULL, seed=1) {
-  # generate n observations of p-variate regressors: if intercept == T the first column is all 1
-  set.seed(seed)
-  n = nTrain + nTest
-  if(is.null(beta)){
-    # randomly generate beta from uniform[-5,5]
-    beta = matrix(runif(n=p, min = -5, max = 5), ncol = 1)
+  results = list(X_Train=X_Train,yTrain=yTrain,beta=beta)
+  
+  if(nTest>0){
+    # generate test set
+    if(intercept == T) {
+      # generate test set
+      X_Test = matrix(rnorm((p-1)*nTest,mean = 0, sd = 1), nrow = nTest, ncol = p-1)
+      
+      # add intercept and standardise data
+      X_Test = cbind(rep(1,nTest),0.5*t(apply(X_Test,1, function(x) (x-meanTrain)/sdTrain)))
+    } else{
+      # generate test set
+      X_Test = matrix(rnorm(p*nTest,mean = 0, sd = 1), nrow = nTest, ncol = p)
+      
+      # standardise data
+      X_Test = 0.5*t(apply(X_Test,1, function(x) (x-meanTrain)/sdTrain)) # so we have zero mean and std=0.5
+    }
+    
+    # generate test data
+    prob = pnorm(X_Test%*%beta)
+    u = runif(nTest,0,1)
+    yTest = as.integer(u <= prob)
+    
+    results = append(results, list(X_Test=X_Test,yTest=yTest))
   }
   
-  if(intercept == T) {
-    X = matrix(rnorm((p-1)*n,mean = 0, sd = 1), nrow = n, ncol = p-1)
-    # meanTrain = apply(X[1:nTrain,],2,mean)
-    # sdTrain = apply(X[1:nTrain,],2,sd)
-    # X = cbind(rep(1,n),0.5*t(apply(X,1, function(x) (x-meanTrain)/sdTrain)))
-    X = cbind(rep(1,n),X)
-  } else{
-    X = matrix(rnorm(p*n,mean = 0, sd = 1), nrow = n, ncol = p)
-    # meanTrain = apply(X[1:nTrain,],2,mean)
-    # sdTrain = apply(X[1:nTrain,],2,sd)
-    # X = 0.5*t(apply(X,1, function(x) (x-meanTrain)/sdTrain)) # so we have zero mean and std=0.5
-  }
-  
-  prob = pnorm(X%*%beta)
-  u = runif(n,0,1)
-  y = as.integer(u <= prob)
-  
-  return(list(X=X,y=y,beta=beta))
+  return(results)
 }
 
 
@@ -214,7 +233,7 @@ generateSyntheticDataNoCorrNoStd = function(nTrain, nTest, p, intercept = FALSE,
 zeta1 = function(x){exp(dnorm(x, log = T) - pnorm(x,log.p = T))}
 zeta2 = function(x,z1){-z1^2-x*z1}
 
-getParamsEP = function(X,y,nu2,tolerance=1e-3,maxIter=1e3,fullVar=FALSE,nPrint=100){
+getParamsEP = function(X,y,nu2,tolerance=1e-3,maxIter=1e3,fullVar=FALSE,predictive=FALSE,nPrint=100){
   
   n = dim(X)[1]
   p = dim(X)[2]
@@ -227,7 +246,7 @@ getParamsEP = function(X,y,nu2,tolerance=1e-3,maxIter=1e3,fullVar=FALSE,nPrint=1
   }else{
     V = nu2*t(X)
   }
-
+  
   r = rep(0,p)
   
   k = double(length = n)
@@ -244,7 +263,7 @@ getParamsEP = function(X,y,nu2,tolerance=1e-3,maxIter=1e3,fullVar=FALSE,nPrint=1
       
       diff = 0.
       count = 0
-
+      
       for(i in 1:n){
         
         xi = X[i,]
@@ -299,7 +318,7 @@ getParamsEP = function(X,y,nu2,tolerance=1e-3,maxIter=1e3,fullVar=FALSE,nPrint=1
       
       diff = 0.
       count = 0
-
+      
       for(i in 1:n){
         
         v = V[,i]
@@ -352,7 +371,7 @@ getParamsEP = function(X,y,nu2,tolerance=1e-3,maxIter=1e3,fullVar=FALSE,nPrint=1
     
     meanBeta = invQ%*%r
     diagOmega = diag(invQ)
-
+    
   }else{
     
     diagOmega = rep(nu2,p)*(rep(1,p) - rowSums(V*t(k*X)))
@@ -364,215 +383,35 @@ getParamsEP = function(X,y,nu2,tolerance=1e-3,maxIter=1e3,fullVar=FALSE,nPrint=1
   
   if(fullVar==TRUE){
     if(p>=n) {
-      Omega = nu2*(diag(1,p,p) - V%*%(k*X))
+      invQ = nu2*(diag(1,p,p) - V%*%(k*X))
     }
-    results = append(list(Omega=Omega),results)
+    results = append(list(Omega=invQ),results)
+  }
+  
+  if(predictive==TRUE){
+    if(p>=n){
+      results = append(list(V=V),results)
+    } else{
+      if(fullVar==FALSE){
+        results = append(list(Omega=invQ),results)
+      }
+    }
   }
   
   return(results)
 }
 
-getParamsEP_bak = function(X1,y1,X0,y0,om2,zT,tolerance=1e-3,maxIter=1e3,
-                       fullVar=FALSE,predictive=FALSE,nPrint=1000){
+predictEP = function(paramsEP,xNew,nu2){
+  p = length(paramsEP$meanBeta)
+  n = length(paramsEP$kEP)
   
-  n1 = dim(X1)[1]
-  n0 = dim(X0)[1]
-  p = dim(X0)[2]
-  
-  ### Pre-Computations
-  
-  r = crossprod(X1,y1) + c(-zT/om2,rep(0,p-1))
-  if(p<n1){
-    Omega0 = solve(diag(1./om2,p,p) + crossprod(X1))
-    beta0 = Omega0%*%r
+  if(p>=n){
+    Xx = X%*%xNew
+    KVtx = paramsEP$k*(t(paramsEP$V)%*%xNew)
+    sd = as.double(sqrt(1+nu2*(sum(xNew^2)-sum(KVtx*Xx))))
   }else{
-    Lambda = solve(diag(1.,n1,n1)+om2*tcrossprod(X1))
-    Omega0 = diag(om2,p,p) - om2*crossprod(X1,Lambda%*%X1)*om2
-    beta0 = om2*(r - crossprod(X1,Lambda%*%(X1%*%r))*om2)
+    sd = as.double(sqrt(1+t(xNew)%*%paramsEP$Omega%*%xNew))
   }
-  # Omega0 = 0.5*(Omega0+t(Omega0))
-  
-  if(p<n0){
-    Omega = Omega0
-    if(p<n1){
-      Q = solve(Omega)
-    }else{
-      Q = diag(1./om2,p,p) + crossprod(X1)
-    }
-    logDetQ0 = determinant(Q, logarithm = TRUE)
-  }else{
-    if(p<n1){
-      U = tcrossprod(Omega0,X0)
-    } else {
-      U = om2*t(X0) - om2*crossprod(X1,Lambda%*%tcrossprod(X1,X0))*om2
-    }
-    U0 = U
-  }
-  
-  logZ0 = 0.5*crossprod(r,beta0)
-  
-  ### Initialization
-  
-  logZ = double(length = n0)
-  k = double(length = n0)
-  m = double(length = n0)
-  
-  diff = 1
-  nIter = 0
-  
-  ### Iterations
-  
-  if(p<n0){
-    
-    while(diff > tolerance && nIter < maxIter){
-      
-      diff = 0.
-      count = 0
-      logZ = 0.
-      
-      for(i in c(1:n0)){
-        
-        xi = X0[i,]
-        
-        r_i = r - m[i]*xi
-        Q_i = Q - k[i]*tcrossprod(xi)
-        
-        Oxi = Omega%*%xi
-        
-        Oi = Omega + tcrossprod(Oxi)*k[i]/as.double(1.-k[i]*crossprod(xi,Oxi))
-        
-        Oixi = Oi%*%xi
-        xiOixi = as.double(crossprod(xi,Oixi))
-        
-        if(xiOixi>0){
-          
-          r_iOixi = as.double(crossprod(r_i,Oixi))
-          
-          s = (2.*y0[i]-1.)/sqrt(1.+xiOixi)
-          tau = s*r_iOixi
-          
-          z1 = zeta1(tau)
-          z2 = zeta2(tau,z1)
-          
-          kNew = - z2/(1.+xiOixi+z2*xiOixi)
-          mNew = s*z1 + kNew*r_iOixi + kNew*s*z1*xiOixi
-          
-          maxDiff = max(abs(c(kNew - k[i], mNew - m[i])))
-          if(maxDiff>diff){diff = maxDiff}
-          
-          k[i] = kNew
-          m[i] = mNew
-          
-          logZ[i] = pnorm(tau,log.p = T) + 0.5*log(1.+k[i]*xiOixi) +
-            0.5*((r_iOixi)^2)/xiOixi - 0.5*((m[i] + r_iOixi/xiOixi)^2)*xiOixi/(1.+k[i]*xiOixi)
-          
-          r = r_i + m[i]*xi
-          Q = Q_i + k[i]*tcrossprod(xi)
-          
-          Omega = Oi - tcrossprod(Oixi)*k[i]/(1.+k[i]*xiOixi)
-        }else{
-          count = count+1
-          print(paste0(count," units skipped"))
-        }
-        
-      }
-      
-      nIter = nIter + 1
-      if(nIter %% nPrint == 0) {print(paste0("iteration ",nIter))}
-    }
-    
-  } else {
-    
-    while(diff > tolerance && nIter < maxIter){
-      
-      diff = 0.
-      count = 0
-      logZ = 0.
-      
-      for(i in c(1:n0)){
-        
-        u = U[,i]
-        xi = X0[i,]
-        xTu = crossprod(xi,u)[1]
-        
-        d = 1-k[i]*xTu
-        w = u/d
-        xTw = xTu/d
-        
-        if(xTw>0){
-          
-          r_iTw = crossprod(r,w) - m[i]*xTw
-          
-          s = (2*y0[i]-1)/sqrt(1+xTw)
-          tau = s*r_iTw
-          
-          z1 = zeta1(tau)
-          z2 = zeta2(tau,z1)
-          
-          kNew = as.double(-z2/(1 + xTw + z2*xTw))
-          mNew = as.double(z1*s + kNew*r_iTw + kNew*z1*s*xTw)
-          
-          r = r + (mNew - m[i])*xi
-          
-          ratio = (k[i]-kNew)/(1.+(kNew-k[i])*xTu)
-          U = U + (u*ratio)%*%crossprod(xi,U)
-          
-          maxDiff = max(abs(c(kNew - k[i], mNew - m[i])))
-          if(maxDiff>diff){diff = maxDiff}
-          
-          k[i] = kNew
-          m[i] = mNew
-          
-          logZ[i] = pnorm(tau,log.p = T) + 0.5*log(1.+k[i]*xTw) +
-            0.5*((r_iTw)^2)/xTw - 0.5*((m[i]+r_iTw/xTw)^2)*xTw/(1.+k[i]*xTw)
-          
-        }else{
-          count = count+1
-          print(paste0(count," units skipped"))
-        }
-      }
-      
-      nIter = nIter + 1
-      if(nIter %% nPrint == 0) {print(paste0("iteration ",nIter))}
-    }
-    
-  }
-  
-  ### Posterior Approximate Moments
-  
-  if(p<n0){
-    
-    meanBeta = Omega%*%r
-    diagOmega = diag(Omega)
-    
-    logDetQ = determinant(Q, logarithm = TRUE)
-    logML = sum(logZ) + 0.5*crossprod(r,meanBeta) - logZ0 + 
-      0.5*logDetQ0$modulus[1] - 0.5*logDetQ$modulus[1] 
-    
-  }else{
-    
-    diagOmega = diag(Omega0) - rowSums(U*t(k*t(U0)))
-    meanBeta = beta0 + U0%*%m - U%*%(k*crossprod(U0,r))
-    
-    logDet = determinant(diag(1,n0,n0) + k*X0%*%U0, logarithm = TRUE)
-    logML = sum(logZ) + 0.5*crossprod(r,meanBeta) - logZ0 - 0.5*logDet$modulus[1]
-  }
-  
-  results = list(meanBeta = meanBeta, diagOmega = diagOmega, logML = logML, 
-                 nIter = nIter, kEP = k, mEP = m)
-  
-  if(fullVar==TRUE){
-    if(p>=n0) {
-      Omega = Omega0 - U%*%(k*t(U0))
-    }
-    results = append(list(Omega=Omega),results)
-  }
-  
-  if(predictive==TRUE){
-    if(p>=n0) {
-      results = c(results,postPredictive=list(U=U,U0=U0))
-    }
-  }
-  
-  return(results)
+  predProb = as.double(pnorm(t(xNew)%*%paramsEP$meanBeta/sd))
+  return(predProb)
 }
