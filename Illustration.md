@@ -19,7 +19,7 @@ Since the focus of the paper is on large p settings, **we consider the case n=10
 In the following, we also show how to replicate the whole simulation study, computing both approximate posterior moments and predictive probabilities in all the scenarios.
 
 ### Set useful quantities
-We start our analysis setting the hyperparameters of the model and defining the number of samples used for the i.i.d. sampler.
+We start our analysis by setting the hyperparameters of the model and defining the number of samples used for the i.i.d. sampler.
 
 ```r
 n = 100 # number of training observations that will be used to compute posterior moments
