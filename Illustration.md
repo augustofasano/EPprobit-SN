@@ -454,7 +454,7 @@ ggplot(data=Plot_dataset)+
   theme(axis.title.x = element_text(size=9),axis.title.y =element_text(size=9),axis.text.y =element_text(size=7),plot.margin = margin(0.1, 0.1, 0.05, -0.2, "cm"),legend.position = "bottom",legend.title=element_blank())
 ```
 
-![alt text](https://github.com/augustofasano//EPprobit-SN/blob/main/fig1.png)
+![alt text](https://github.com/augustofasano/EPprobit-SN/blob/main/fig1.png)
 
 
 ### Reproduce the results of Fasano et al., Book of short papers - CLADAG 2023
@@ -527,7 +527,7 @@ ggplot(data=PlotPred_dataset)+
   theme(axis.title.x = element_text(size=9),axis.title.y =element_text(size=9),axis.text.y =element_text(size=7),plot.margin = margin(0.1, 0.1, 0.05, -0.2, "cm"),legend.position = "bottom",legend.title=element_blank())
 ```
 
-![alt text](https://github.com/augustofasano//EPprobit-SN/blob/main/figPredProbs.png)
+![alt text](https://github.com/augustofasano/EPprobit-SN/blob/main/figPredProbs.png)
 
 
 
