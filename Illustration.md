@@ -9,6 +9,7 @@ Once the file [`functions.R`](https://github.com/augustofasano/EPprobit-SN/blob/
 ```r
 source("functions.R")
 library("TruncatedNormal")
+library("truncnorm")
 library("EPGLM")
 ```
 
@@ -22,9 +23,9 @@ In the following, we also show how to replicate the whole simulation study, comp
 We start our analysis by setting the hyperparameters of the model and defining the number of samples used for the i.i.d. sampler.
 
 ```r
-n = 100 # number of training observations that will be used to compute posterior moments
+nTrain = 100 # number of training observations that will be used to compute posterior moments
 pnRatioValues = c(0.5,1,2,4,8)
-pValues = n*pnRatioValues
+pValues = nTrain*pnRatioValues
 i=5 # consider the fifth scenario p=800
 p = pValues[i]
 
@@ -171,22 +172,16 @@ Time needed to compute posterior moments:
 
 ```r
 round(timeEP,2)
-# [1] 0.09
 round(timeEPglm,2)
-# [1] 140.24
 round(timePFM,2)
-# [1] 0.01
 ```
 
 Time needed to compute posterior moments and predictive probabilities:
 
 ```r
 round(timeEPpredProb,2)
-# [1] 0.10
 round(timeEPglm_predProb,2)
-# [1] 140.29
 round(timePFMpredProb,2)
-# [1] 0.14
 ```
 
 
@@ -386,8 +381,6 @@ First, we need to create an appropriate data frame.
 
 ```r
 rm(list=ls())
-library(rstudioapi)
-setwd(dirname(rstudioapi::getSourceEditorContext()$path)) #set the directory to the path of the current script
 
 load("outputSimStudy.RData")
 nScen = length(meanMC)
@@ -486,8 +479,6 @@ First, we need to create an appropriate data frame.
 
 ```r
 rm(list=ls())
-library(rstudioapi)
-setwd(dirname(rstudioapi::getSourceEditorContext()$path)) #set the directory to the path of the current script
 
 load("outputSimStudy.RData")
 nScen = length(meanMC)
@@ -524,10 +515,6 @@ PlotPred_dataset$quantity<-factor(PlotPred_dataset$quantity,levels=c("Predictive
 And then we plot the quantities.
 
 ```r
-library(ggplot2)
-library(reshape)
-library(scales)
-
 ggplot(data=PlotPred_dataset)+
   geom_ribbon(aes(x=p,ymin=low, ymax=high, group=method),alpha=0.05)+
   geom_line(aes(x=p, y=median,lty=method,color=method),lwd=0.5)+
