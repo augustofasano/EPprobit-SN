@@ -375,7 +375,7 @@ getParamsEP = function(X,y,nu2,tolerance=1e-3,maxIter=1e3,fullVar=FALSE,predicti
   }else{
     
     diagOmega = rep(nu2,p)*(rep(1,p) - rowSums(V*t(k*X)))
-    meanBeta = nu2*(t(X)%*%m - V%*%(k*X%*%r))
+    meanBeta = nu2*(r - V%*%(k*X%*%r))
   }
   
   results = list(meanBeta = meanBeta, diagOmega = diagOmega, 
