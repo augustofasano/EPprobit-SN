@@ -241,7 +241,6 @@ getParamsEP = function(X,y,nu2,tolerance=1e-3,maxIter=1e3,fullVar=FALSE,predicti
   
   ### Initialization
   if(p<n){
-    Q = diag(1/nu2,p,p)
     invQ = diag(nu2,p,p)
   }else{
     V = nu2*t(X)
@@ -268,7 +267,6 @@ getParamsEP = function(X,y,nu2,tolerance=1e-3,maxIter=1e3,fullVar=FALSE,predicti
         
         xi = X[i,]
         
-        Q_i = Q - k[i]*tcrossprod(xi)
         r_i = r - m[i]*xi
         
         Oxi = invQ%*%xi
@@ -298,7 +296,6 @@ getParamsEP = function(X,y,nu2,tolerance=1e-3,maxIter=1e3,fullVar=FALSE,predicti
           m[i] = mNew
           
           r = r_i + m[i]*xi
-          Q = Q_i + k[i]*tcrossprod(xi)
           
           invQ = Oi - tcrossprod(Oixi)*k[i]/(1.+k[i]*xiOixi)
         }else{
